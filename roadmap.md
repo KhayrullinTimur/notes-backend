@@ -9,7 +9,15 @@ DONE
 - Password hashing
 - Login
 - JWT
+- Protected endpoints (authentication & authorization)
+- PostgreSQL integration
+- Service layer (business logic separation)
+- Environment variables (.env config)
 
 IN PROGRESS
-- Protected endpoints
-- PostgreSQL
+- Project architecture (clean structure)
+
+NEXT
+- Repository layer (DB abstraction)
+- Alembic (migrations)
+- Docker

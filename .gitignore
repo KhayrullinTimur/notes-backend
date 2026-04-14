@@ -1,6 +1,24 @@
-venv/
+# Python
 __pycache__/
 *.pyc
-.DS_Store
-notes.db
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# Env variables
 .env
+
+# macOS
+.DS_Store
+
+# Database
+notes.db
+
+# IDE
+.vscode/
+
+# Logs
+*.log

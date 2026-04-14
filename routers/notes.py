@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from models import Note, User
+from models import User
 from schemas import NoteCreate, NoteUpdate, NoteResponse
 from database import get_db
 from security import get_current_user
+from services.note_service import create_note, get_notes, get_note_by_id, update_note, delete_note
 
 router = APIRouter()
 
@@ -14,19 +15,10 @@ def note_add(
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
-    
-    db_note = Note(
-        text=note.text,
-        user_id=current_user.id
-    )
-    
-    db.add(db_note)
-    db.commit()
-    db.refresh(db_note)
-    return db_note
+    return create_note(db, note, current_user)
 
 @router.get("/notes", response_model=list[NoteResponse])
-def get_notes(
+def get_notes_endpoint(
     limit: int = Query(default=10, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     search: str | None = None,
@@ -34,14 +26,7 @@ def get_notes(
     current_user: User = Depends(get_current_user)
     ):
 
-    query = db.query(Note).filter(Note.user_id == current_user.id)
-
-    if search:
-        query = query.filter(Note.text.ilike(f"%{search}%"))
-
-    notes = query.limit(limit).offset(offset).all()
-    
-    return notes
+    return get_notes(db, current_user, limit, offset, search)
 
 @router.get("/notes/{note_id}", response_model=NoteResponse)
 def get_note(
@@ -49,37 +34,17 @@ def get_note(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
     ):
-
-    note = db.query(Note).filter(Note.id == note_id).first()
     
-    if note is None:
-        raise HTTPException(status_code=404, detail="Note not Found")
-
-    if note.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    
-    return note
+    return get_note_by_id(db, note_id, current_user)
 
 @router.put("/notes/{note_id}", response_model=NoteResponse)
-def update_note(
-    note_id: int, update_note: NoteUpdate, 
+def update_note_endpoint(
+    note_id: int, update_data: NoteUpdate, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
     ):
 
-    note = db.query(Note).filter(Note.id == note_id).first()
-
-    if note is None:
-        raise HTTPException(status_code=404, detail="Note not Found")
-
-    if note.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    
-    note.text = update_note.text
-    db.commit()
-    db.refresh(note)
-    
-    return note
+    return update_note(db, note_id, update_data, current_user)
 
 @router.delete("/notes/{note_id}")
 def del_note(
@@ -88,15 +53,5 @@ def del_note(
     current_user: User = Depends(get_current_user)
     ):
     
-    note = db.query(Note).filter(Note.id == note_id).first()
+    return delete_note(db, note_id, current_user)
 
-    if note is None:
-        raise HTTPException(status_code=404, detail="Note not Found")
-
-    if note.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    
-    db.delete(note)
-    db.commit()
-
-    return {"message": "Note deleted"}
